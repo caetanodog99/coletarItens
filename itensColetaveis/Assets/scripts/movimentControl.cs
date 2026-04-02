@@ -1,34 +1,57 @@
 using System.Collections;
 using System.Collections.Generic;
+using Fusion;
 using TMPro;
 using UnityEngine;
 
-public class movimentControl : MonoBehaviour
+public class movimentControl : NetworkBehaviour
 {
-    public CharacterController characterController;
-    public float speed = 5f;
-    
+    private CharacterController characterController;
+    public float velocidade = 5f;
     public Animator animator;
+
+    [Networked] public int Score { get; set; }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_AddScore(int points)
+    {
+        Score += points;
+    }
+
 
     public void Awake()
     {
         characterController = GetComponent<CharacterController>();
     }
-
-    public void Update()
+    public override void FixedUpdateNetwork()
     {
-      
+        if (HasStateAuthority)
+        {
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
 
-            Vector3 direction = new Vector3 (horizontal, 0, vertical);
-            if (direction.magnitude > 0.1f)
+            Vector3 direcao = new Vector3(horizontal, 0, vertical);
+            if (direcao.magnitude > 0.1f)
             {
+                #region 1ª forma de movimentação
+                ////movimento do personagem
+                //characterController.Move(direcao * velocidade * Runner.DeltaTime);
+                ////rotacao do personagem
+                //transform.rotation = Quaternion.LookRotation(direcao);
+                #endregion
 
-                characterController.Move(transform.forward * vertical * speed * Time.deltaTime);
-                float rotationSpeed = speed * 50;
-                transform.Rotate(new Vector3(0, horizontal * rotationSpeed * Time.deltaTime, 0));
+                #region 2ª forma de movimentação
+                //movimento do personagem
+                characterController.Move(
+                    transform.forward * vertical * velocidade * Runner.DeltaTime);
+                //rotacao do personagem
+                float velocidadeRotacao = velocidade * 50f;
+                transform.Rotate(new Vector3(0,
+                    horizontal * velocidadeRotacao * Runner.DeltaTime,
+                    0));
+                #endregion
 
+                //animacao do personagem
                 animator.SetBool("canWalk", true);
             }
             else
@@ -36,7 +59,8 @@ public class movimentControl : MonoBehaviour
                 animator.SetBool("canWalk", false);
             }
 
-                      
+
         }
     }
+}
 
